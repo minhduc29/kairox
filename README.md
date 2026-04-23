@@ -42,8 +42,6 @@ git clone https://github.com/minhduc29/kairox.git
 cd kairox
 ```
 
----
-
 ### 2. Create and activate virtual environment
 
 #### macOS / Linux
@@ -60,15 +58,11 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
----
-
 ### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
-
----
 
 ### 4. Set up environment variables
 
@@ -80,15 +74,11 @@ ANTHROPIC_API_KEY=your_claude_key_here
 
 > ⚠️ Do NOT commit your `.env` file. Use `.env.example` as a template.
 
----
-
 ### 5. Run the program
 
 ```bash
 python3 main.py
 ```
-
----
 
 ### 6. Usage
 
