@@ -84,7 +84,7 @@ def on_press(key):
 
     elif key == QUIT_KEY:
         print("[*] Quitting.")
-        return # stops the listener
+        return False # stops the listener
 
 def main():
     print(f"[*] Kairox running.")
