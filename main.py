@@ -78,17 +78,25 @@ def capture_screen_and_query():
     print(answer)
     print("=" * 60 + "\n")
 
+def print_hotkeys():
+    print("[*] Hotkeys:")
+    print("\tCtrl+Shift+H - Print this list")
+    print("\tCtrl+Shift+A - Capture screen and query")
+    print("\tEsc - Quit\n")
+
 def quit_program():
     print("[*] Quitting.")
     listener.stop()
 
 listener = keyboard.GlobalHotKeys({
     "<ctrl>+<shift>+a": capture_screen_and_query,
+    "<ctrl>+<shift>+h": print_hotkeys,
     "<esc>": quit_program
 })
 
 def main():
     print(f"[*] Kairox running.")
+    print(f"    Press Ctrl+Shift+H for list of hotkeys\n")
     listener.start()
     listener.join()
 
