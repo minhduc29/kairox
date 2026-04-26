@@ -12,9 +12,6 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 client = anthropic.Client(api_key=ANTHROPIC_API_KEY)
 
-TRIGGER_KEY = keyboard.Key.esc # change to whatever key you want
-QUIT_KEY = keyboard.Key.ctrl
-
 def take_screenshot() -> str:
     """Take a screenshot on macOS and return it as a base64 string."""
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
@@ -64,33 +61,36 @@ def ask_claude(image_b64: str, prompt: str) -> str:
             result += block.text
     return result
 
-def on_press(key):
-    if key == TRIGGER_KEY:
-        print("\n[*] Taking screenshot...")
-        img_b64 = take_screenshot()
+def capture_screen_and_query():
+    print("[*] Taking screenshot...")
+    img_b64 = take_screenshot()
 
-        print("[*] Asking Claude...")
-        prompt = (
-            """Look at this screenshot, determine the correct answer, and answer concisely. 
-            If it is a multiple choice question, state only the correct option letter and answer, nothing else. 
-            If it is a free response question, state the correct answer (if any) and explain in two sentences maximum. 
-            You have access to web search — use it if you need to look something up to answer accurately."""
-        )
-        answer = ask_claude(img_b64, prompt)
+    print("[*] Asking Claude...")
+    prompt = (
+        """Look at this screenshot, determine the correct answer, and answer concisely. 
+        If it is a multiple choice question, state only the correct option letter and answer, nothing else. 
+        If it is a free response question, state the correct answer (if any) and explain in two sentences maximum. 
+        You have access to web search — use it if you need to look something up to answer accurately."""
+    )
+    answer = ask_claude(img_b64, prompt)
 
-        print("\n" + "=" * 60)
-        print(answer)
-        print("=" * 60 + "\n")
+    print("\n" + "=" * 60)
+    print(answer)
+    print("=" * 60 + "\n")
 
-    elif key == QUIT_KEY:
-        print("[*] Quitting.")
-        return False # stops the listener
+def quit_program():
+    print("[*] Quitting.")
+    listener.stop()
+
+listener = keyboard.GlobalHotKeys({
+    "<ctrl>+<shift>+a": capture_screen_and_query,
+    "<esc>": quit_program
+})
 
 def main():
     print(f"[*] Kairox running.")
-    print(f"    Press ESC to capture + answer  |  CTRL to quit\n")
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()
+    listener.start()
+    listener.join()
 
 if __name__ == "__main__":
     main()
