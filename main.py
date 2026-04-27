@@ -22,57 +22,71 @@ def take_screenshot() -> str:
     os.unlink(tmp_path)
     return data
 
-def ask_claude(image_b64: str, prompt: str) -> str:
-    """Send screenshot + prompt to Claude vision and return the answer."""
+def ask_claude(image_b64: str | None = None, text: str | None = None) -> str:
+    """Send prompt to Claude API and return the answer."""
+    if not image_b64 and not text:
+        raise ValueError("At least one of image or text must be provided for context.")
+
+    # Build prompt content based on given image and text
+    content = []
+    if image_b64:
+        content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": image_b64,
+            }
+        })
+
+    prompt = """Help me determine the correct answer, and answer concisely. 
+If it is a multiple choice question, state only the correct option letter and answer, nothing else. 
+If it is a free response question, state the correct answer (if any) and explain in two sentences maximum. 
+You have access to web search — use it if you need to look something up to answer accurately."""
+    content.append({
+        "type": "text",
+        "text": f"{prompt}{f"\nContext: {text}" if text else ""}", # same prompt for both image and text
+    })
+
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=300, # limit response length (to reduce API cost)
-        tools=[
-            {
-                "type": "web_search_20250305",
-                "name": "web_search"
-            }
-        ],
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": image_b64,
-                        },
-                    },
-                    {
-                        "type": "text",
-                        "text": prompt,
-                    },
-                ],
-            }
-        ],
+        tools=[{
+            "type": "web_search_20250305",
+            "name": "web_search"
+        }],
+        messages=[{
+            "role": "user",
+            "content": content,
+        }],
     )
 
-    # extract text from response (web search adds extra content blocks)
-    result = ""
+    # Extract text from response (web search adds extra content blocks)
+    result = []
     for block in message.content:
         if block.type == "text":
-            result += block.text
-    return result
+            result.append(block.text)
+    return "".join(result)
 
 def capture_screen_and_query():
     print("[*] Taking screenshot...")
     img_b64 = take_screenshot()
 
     print("[*] Asking Claude...")
-    prompt = (
-        """Look at this screenshot, determine the correct answer, and answer concisely. 
-        If it is a multiple choice question, state only the correct option letter and answer, nothing else. 
-        If it is a free response question, state the correct answer (if any) and explain in two sentences maximum. 
-        You have access to web search — use it if you need to look something up to answer accurately."""
-    )
-    answer = ask_claude(img_b64, prompt)
+    answer = ask_claude(img_b64)
+
+    print("\n" + "=" * 60)
+    print(answer)
+    print("=" * 60 + "\n")
+
+def query_clipboard():
+    text = subprocess.check_output(["pbpaste"]).decode("utf-8")
+    if not text:
+        print("[*] No text in clipboard.")
+        return
+
+    print("[*] Asking Claude with clipboard text...")
+    answer = ask_claude(text=text)
 
     print("\n" + "=" * 60)
     print(answer)
@@ -82,6 +96,7 @@ def print_hotkeys():
     print("[*] Hotkeys:")
     print("\tCtrl+Shift+H - Print this list")
     print("\tCtrl+Shift+A - Capture screen and query")
+    print("\tCtrl+Shift+C - Query clipboard text")
     print("\tEsc - Quit\n")
 
 def quit_program():
@@ -90,6 +105,7 @@ def quit_program():
 
 listener = keyboard.GlobalHotKeys({
     "<ctrl>+<shift>+a": capture_screen_and_query,
+    "<ctrl>+<shift>+c": query_clipboard,
     "<ctrl>+<shift>+h": print_hotkeys,
     "<esc>": quit_program
 })
